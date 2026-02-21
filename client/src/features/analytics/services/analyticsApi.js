@@ -1,0 +1,6 @@
+import api from '../../../services/api';
+
+export async function getAnalytics() {
+  const res = await api.get('/analytics');
+  return res?.data?.data || null;
+}

@@ -1,25 +1,48 @@
+const User = require('../models/User');
+const { sendError } = require('../utils/response');
 const { verifyAccessToken } = require('../utils/token');
 
-function requireAuth(req, res, next) {
+function extractToken(req) {
+  const authHeader = req.headers?.authorization;
+  if (authHeader && typeof authHeader === 'string') {
+    const [scheme, value] = authHeader.split(' ');
+    if (scheme?.toLowerCase() === 'bearer' && value) return value;
+  }
+
+  const cookieToken = req.cookies?.token;
+  if (cookieToken && typeof cookieToken === 'string') return cookieToken;
+
+  return null;
+}
+
+async function requireAuth(req, res, next) {
   try {
-    const cookieToken = req.cookies?.token;
-
-    const header = req.headers.authorization || '';
-    const bearerToken = header.startsWith('Bearer ') ? header.slice(7) : null;
-
-    const token = cookieToken || bearerToken;
+    const token = extractToken(req);
     if (!token) {
-      const err = new Error('Not authenticated');
-      err.statusCode = 401;
-      throw err;
+      return sendError(res, { statusCode: 401, message: 'Unauthorized' });
     }
 
-    const payload = verifyAccessToken(token);
-    req.userId = payload.sub;
+    let payload;
+    try {
+      payload = verifyAccessToken(token);
+    } catch (e) {
+      return sendError(res, { statusCode: 401, message: 'Invalid or expired token' });
+    }
 
+    const userId = payload?.sub;
+    if (!userId) {
+      return sendError(res, { statusCode: 401, message: 'Invalid token payload' });
+    }
+
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return sendError(res, { statusCode: 401, message: 'User not found' });
+    }
+
+    req.userId = String(user._id);
+    req.user = typeof user.toObject === 'function' ? user.toObject() : user;
     next();
   } catch (e) {
-    e.statusCode = e.statusCode || 401;
     next(e);
   }
 }

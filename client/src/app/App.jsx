@@ -1,6 +1,7 @@
 import React from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
+import { FleetProvider } from '../context/FleetContext';
 import makeRouter from './router';
 
 export default function App() {
@@ -8,7 +9,9 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <FleetProvider>
+        <RouterProvider router={router} />
+      </FleetProvider>
     </AuthProvider>
   );
 }

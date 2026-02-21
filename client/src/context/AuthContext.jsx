@@ -1,68 +1,111 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import api from '../services/api';
+import {
+  getCurrentUser,
+  login as loginRequest,
+  logout as logoutRequest,
+  signup as signupRequest,
+} from '../features/auth/services/authService';
+import {
+  clearStoredToken,
+  getStoredToken,
+  setApiAuthToken,
+  setStoredToken,
+} from '../services/api';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => getStoredToken());
 
-  const refreshMe = useCallback(async () => {
-    try {
-      const res = await api.get('/auth/me');
-      // Unified server response: { success, message, data }
-      setUser(res?.data?.data?.user || null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
+  const isAuthenticated = Boolean(user);
 
   useEffect(() => {
     let isMounted = true;
-    (async () => {
+
+    const stored = getStoredToken();
+    if (stored) {
+      setApiAuthToken(stored);
+    }
+
+    const bootstrap = async () => {
       try {
-        await refreshMe();
+        const currentUser = await getCurrentUser();
+        if (isMounted && currentUser) {
+          setUser(currentUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
       } finally {
-        if (isMounted) setIsBootstrapping(false);
+        if (isMounted) {
+          setIsBootstrapping(false);
+        }
       }
-    })();
+    };
+
+    bootstrap();
 
     return () => {
       isMounted = false;
     };
-  }, [refreshMe]);
-
-  const login = useCallback(async ({ email, password }) => {
-    const res = await api.post('/auth/login', { email, password });
-    setUser(res?.data?.data?.user || null);
-    return res;
   }, []);
 
-  const register = useCallback(async ({ name, email, password }) => {
-    const res = await api.post('/auth/register', { name, email, password });
-    setUser(res?.data?.data?.user || null);
-    return res;
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null);
+      setToken(null);
+    };
+    window.addEventListener('auth:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', onUnauthorized);
+  }, []);
+
+  const login = useCallback(async ({ email, password }) => {
+    const { user: nextUser, token: nextToken } = await loginRequest({ email, password });
+    if (nextToken) {
+      setStoredToken(nextToken);
+      setApiAuthToken(nextToken);
+      setToken(nextToken);
+    }
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
+  const signup = useCallback(async ({ name, email, password, role }) => {
+    const { user: nextUser, token: nextToken } = await signupRequest({ name, email, password, role });
+    if (nextToken) {
+      setStoredToken(nextToken);
+      setApiAuthToken(nextToken);
+      setToken(nextToken);
+    }
+    setUser(nextUser);
+    return nextUser;
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await api.post('/auth/logout');
+      await logoutRequest();
     } finally {
       setUser(null);
+      setToken(null);
+      clearStoredToken();
+      setApiAuthToken(null);
     }
   }, []);
 
   const value = useMemo(
     () => ({
-      user,
-      isAuthenticated: Boolean(user),
       isBootstrapping,
+      isAuthenticated,
+      user,
+      token,
       login,
-      register,
+      signup,
       logout,
-      refreshMe,
     }),
-    [user, isBootstrapping, login, register, logout, refreshMe],
+    [isBootstrapping, isAuthenticated, user, token, login, signup, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const fuelLogSchema = new mongoose.Schema({
 
   vehicle: {

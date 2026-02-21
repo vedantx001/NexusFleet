@@ -55,6 +55,19 @@ async function logout(req, res) {
 
 async function me(req, res, next) {
   try {
+    if (!req.userId || req.userId === 'dev') {
+      return sendSuccess(res, {
+        message: 'Current user',
+        data: {
+          user: {
+            id: 'dev',
+            name: 'Dev User',
+            email: 'dev@nexusfleet.local',
+          },
+        },
+      });
+    }
+
     const user = await userService.getUserById(req.userId);
     if (!user) {
       const err = new Error('User not found');

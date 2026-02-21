@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SelectDropdown({
   label,
@@ -12,6 +13,7 @@ export default function SelectDropdown({
   placeholder = 'Select an option',
   required,
   className = '',
+  variant = '',
 }) {
   const selectedOption = options.find((opt) => opt.id === value);
 
@@ -19,19 +21,14 @@ export default function SelectDropdown({
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <div className="flex items-center justify-between">
         {label ? (
-          <label htmlFor={id} className="text-sm font-medium text-[var(--text-primary)] transition-colors">
-            {label} {required ? <span className="text-[var(--danger)]">*</span> : null}
+          <label htmlFor={id} className="text-sm font-medium text-white/90">
+            {label} {required ? <span className="text-(--danger)">*</span> : null}
           </label>
         ) : null}
-        {selectedOption ? (
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${selectedOption.color}`}>
-            {selectedOption.label}
-          </span>
-        ) : null}
       </div>
-      <div className="relative">
+      <div className="relative group">
         {Icon ? (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none transition-colors">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-(--brand-accent) transition-colors duration-300 pointer-events-none z-10">
             <Icon size={18} />
           </div>
         ) : null}
@@ -39,32 +36,67 @@ export default function SelectDropdown({
           id={id}
           value={value}
           onChange={onChange}
-          className={`
-            w-full appearance-none rounded-lg border bg-[var(--bg-surface)] py-2.5 text-sm
-            transition-all duration-200 cursor-pointer
-            focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/30
-            ${Icon ? 'pl-10 pr-10' : 'px-3 pr-10'}
-            ${!value ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}
-            ${error
-              ? 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]/20'
-              : 'border-[var(--border)] focus:border-[var(--brand-accent)]'}
-          `}
+          className={(() => {
+            const base = [
+              'w-full appearance-none',
+              'rounded-xl',
+              'py-3 text-sm',
+              'transition-all duration-300 ease-in-out',
+              'cursor-pointer shadow-sm',
+              Icon ? 'pl-11 pr-11' : 'px-4 pr-11',
+            ];
+
+            if (variant === 'auth') {
+              base.push('bg-[#0B1220]');
+              base.push('border-white/6');
+              base.push('text-white');
+              base.push('focus:outline-none focus:border-(--brand-accent) focus:ring-2 focus:ring-(--brand-accent)/20');
+            } else {
+              base.push('bg-[#0F172A]');
+              base.push('text-white');
+              base.push('focus:outline-none focus:border-(--brand-accent) focus:ring-2 focus:ring-(--brand-accent)/30');
+            }
+
+            if (!value) base.push('text-gray-400');
+
+            if (error) {
+              base.push('border-(--danger)');
+              base.push('focus:border-(--danger)');
+              base.push('focus:ring-(--danger)/30');
+            } else {
+              base.push('hover:border-white/20');
+            }
+
+            return base.concat().join(' ');
+          })()}
           required={required}
         >
-          <option value="" disabled>
+          <option value="" disabled className="text-gray-400 bg-[#0F172A]">
             {placeholder}
           </option>
           {options.map((option) => (
-            <option key={option.id} value={option.id}>
+            <option key={option.id} value={option.id} className="text-white bg-[#0F172A] py-2">
               {option.label}
             </option>
           ))}
         </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none transition-colors">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-(--brand-accent) transition-colors duration-300">
           <ChevronDown size={18} />
         </div>
+        <AnimatePresence>
+          {error && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="absolute -bottom-5 left-0 text-xs text-(--danger)"
+            >
+              {error}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
-      {error ? <p className="text-xs text-[var(--danger)]">{error}</p> : null}
+      {error ? <div className="h-4"></div> : null}
     </div>
   );
 }

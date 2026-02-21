@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Briefcase, Hash, Mail, Phone, ShieldCheck, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import AuthLayout from '../components/AuthLayout';
 import Checkbox from '../components/forms/Checkbox';
 import FormButton from '../components/forms/FormButton';
@@ -9,11 +10,10 @@ import PasswordField from '../components/forms/PasswordField';
 import SelectDropdown from '../components/forms/SelectDropdown';
 import { ROLES } from '../constants/roles';
 import useAuth from '../hooks/useAuth';
-import useThemeMode from '../hooks/useThemeMode';
 
 function getPasswordStrength(password) {
   let score = 0;
-  if (!password) return { score: 0, label: 'None', color: 'bg-[var(--border)]' };
+  if (!password) return { score: 0, label: 'None', color: 'bg-white/10' };
   if (password.length >= 8) score += 1;
   if (/[A-Z]/.test(password)) score += 1;
   if (/[0-9]/.test(password)) score += 1;
@@ -21,22 +21,31 @@ function getPasswordStrength(password) {
 
   switch (score) {
     case 1:
-      return { score, label: 'Weak', color: 'bg-[var(--danger)]' };
+      return { score, label: 'Weak', color: 'bg-(--danger)' };
     case 2:
-      return { score, label: 'Fair', color: 'bg-[var(--warning)]' };
+      return { score, label: 'Fair', color: 'bg-(--warning)' };
     case 3:
-      return { score, label: 'Good', color: 'bg-[var(--info)]' };
+      return { score, label: 'Good', color: 'bg-sky-400' };
     case 4:
-      return { score, label: 'Strong', color: 'bg-[var(--success)]' };
+      return { score, label: 'Strong', color: 'bg-(--success)' };
     default:
-      return { score: 0, label: 'Too Short', color: 'bg-[var(--danger)]' };
+      return { score: 0, label: 'Too Short', color: 'bg-(--danger)' };
   }
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const { signup } = useAuth();
-  const { isDark, toggleTheme } = useThemeMode();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -58,7 +67,7 @@ export default function SignupPage() {
     const nextErrors = {};
     if (!formData.fullName) nextErrors.fullName = 'Full name is required';
     if (!formData.email) nextErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) nextErrors.email = 'Invalid email format';
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) nextErrors.email = 'Invalid email format';
 
     if (!formData.password) nextErrors.password = 'Password is required';
     else if (strength.score < 2) nextErrors.password = 'Password is too weak';
@@ -91,7 +100,7 @@ export default function SignupPage() {
       await signup({ name: formData.fullName, email: formData.email, password: formData.password, role: formData.role });
       navigate('/dashboard', { replace: true });
     } catch (error) {
-      setErrors((prev) => ({ ...prev, form: error?.friendlyMessage || 'Unable to create account' }));
+      setErrors((prev) => ({ ...prev, form: error?.friendlyMessage || 'Unable to create account. Please try again.' }));
     } finally {
       setIsLoading(false);
     }
@@ -99,18 +108,30 @@ export default function SignupPage() {
 
   return (
     <AuthLayout
-      title="Register Personnel"
-      subtitle="Create a new NexusFleet operations account."
-      isDark={isDark}
-      toggleTheme={toggleTheme}
+      title="Create Your Account"
+      subtitle="Start managing your fleet today."
     >
-      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        {errors.form ? <p className="text-sm text-[var(--danger)]">{errors.form}</p> : null}
+      <motion.form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        noValidate
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
+        {errors.form ? (
+          <motion.div variants={itemVariants} className="p-3 rounded-lg bg-(--danger)/10 border border-(--danger)/30">
+            <p className="text-sm text-(--danger) font-medium text-center">{errors.form}</p>
+          </motion.div>
+        ) : null}
 
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] border-b border-[var(--border)] pb-2 transition-colors">
-            Personal Information
-          </h3>
+        <motion.div variants={itemVariants} className="space-y-4">
+          <div className="flex items-center gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-(--brand-accent)">
+              Personal Info
+            </h3>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
           <div className="grid gap-5 md:grid-cols-2">
             <InputField
               label="Full Name"
@@ -144,12 +165,15 @@ export default function SignupPage() {
               onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
             />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-4 pt-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] border-b border-[var(--border)] pb-2 transition-colors">
-            Account Security
-          </h3>
+        <motion.div variants={itemVariants} className="space-y-4 pt-2">
+          <div className="flex items-center gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-(--brand-accent)">
+              Security
+            </h3>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
           <div className="grid gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <PasswordField
@@ -161,21 +185,28 @@ export default function SignupPage() {
                 error={errors.password}
                 required
               />
-              {formData.password ? (
-                <div className="mt-1 flex flex-col gap-1">
-                  <div className="flex h-1.5 w-full gap-1 overflow-hidden rounded-full bg-[var(--border)]">
-                    {[1, 2, 3, 4].map((level) => (
-                      <div
-                        key={level}
-                        className={`h-full w-1/4 transition-all duration-300 ${level <= strength.score ? strength.color : 'bg-transparent'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className={`text-[10px] font-medium text-right ${strength.score < 2 ? 'text-[var(--danger)]' : 'text-[var(--text-secondary)]'}`}>
-                    {strength.label}
-                  </p>
-                </div>
-              ) : null}
+              <AnimatePresence>
+                {formData.password && !errors.password && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2 flex flex-col gap-1.5"
+                  >
+                    <div className="flex h-1.5 w-full gap-1 overflow-hidden rounded-full bg-white/5">
+                      {[1, 2, 3, 4].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-full w-1/4 transition-colors duration-500 rounded-full ${level <= strength.score ? strength.color : 'bg-transparent'}`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-[10px] font-bold tracking-wide uppercase text-right transition-colors duration-500 ${strength.score < 2 ? 'text-(--danger)' : 'text-(--brand-accent)'}`}>
+                      {strength.label}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <PasswordField
@@ -188,12 +219,15 @@ export default function SignupPage() {
               required
             />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-4 pt-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] border-b border-[var(--border)] pb-2 transition-colors">
-            Professional Details
-          </h3>
+        <motion.div variants={itemVariants} className="space-y-4 pt-2">
+          <div className="flex items-center gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-(--brand-accent)">
+              Role Details
+            </h3>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
           <div className="grid gap-5 md:grid-cols-2">
             <SelectDropdown
               label="System Role"
@@ -203,6 +237,7 @@ export default function SignupPage() {
               options={ROLES}
               value={formData.role}
               onChange={(event) => setFormData({ ...formData, role: event.target.value })}
+              variant="auth"
               error={errors.role}
               required
               className="md:col-span-2"
@@ -224,9 +259,9 @@ export default function SignupPage() {
               onChange={(event) => setFormData({ ...formData, employeeId: event.target.value })}
             />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="pt-4 border-t border-[var(--border)] transition-colors">
+        <motion.div variants={itemVariants} className="pt-4 border-t border-white/10 mt-6">
           <Checkbox
             id="agreement"
             label="I agree to NexusFleet operational policies and terms of service."
@@ -234,21 +269,32 @@ export default function SignupPage() {
             onChange={(event) => setFormData({ ...formData, agreement: event.target.checked })}
             error={errors.agreement}
           />
-        </div>
+        </motion.div>
 
-        <div className="pt-2">
-          <FormButton type="submit" isLoading={isLoading} disabled={!isFormValid} className="py-3">
+        <motion.div variants={itemVariants} className="pt-4">
+          <FormButton type="submit" isLoading={isLoading} disabled={!isFormValid}>
             Create Account
           </FormButton>
-        </div>
+        </motion.div>
 
-        <p className="text-center text-sm text-[var(--text-secondary)] mt-4 transition-colors">
-          Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-[var(--info)] hover:text-[var(--brand-accent)] transition-colors">
-            Return to Login
-          </Link>
-        </p>
-      </form>
+        <motion.div variants={itemVariants} className="relative py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-3 bg-[#111827] text-gray-400 font-medium">OR</span>
+          </div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="text-center">
+          <p className="text-sm text-gray-400">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-(--brand-accent) hover:text-sky-300 transition-colors">
+              Return to Login
+            </Link>
+          </p>
+        </motion.div>
+      </motion.form>
     </AuthLayout>
   );
 }

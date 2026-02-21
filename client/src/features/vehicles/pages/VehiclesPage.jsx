@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, ShieldAlert } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Drawer from '../components/Drawer';
 import Modal from '../components/Modal';
 import VehicleDetailsDrawer from '../components/VehicleDetailsDrawer';
@@ -27,7 +28,7 @@ export default function VehiclesPage() {
   const [maintenanceAction, setMaintenanceAction] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8; // Increased slightly for better layout
 
   const filteredVehicles = useVehicleFilters({ vehicles, searchQuery, filters });
   const paginatedVehicles = useMemo(
@@ -122,35 +123,43 @@ export default function VehiclesPage() {
   const existingPlates = vehicles.map((vehicle) => vehicle.plate);
 
   return (
-    <div className="flex-1 overflow-auto p-4 sm:p-8 bg-[var(--bg-main)] text-[var(--text-primary)]">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex-1 w-full flex flex-col gap-6 font-sans relative"
+    >
+      {/* Background glow specific to vehicles page if wanted, otherwise keeping it clean */}
+
       {isLoading && vehicles.length === 0 ? (
-        <div className="mb-6">
-          <Loader label="Loading vehicles…" />
+        <div className="mb-2">
+          <Loader label="Loading fleet details…" />
         </div>
       ) : null}
+
       {error ? (
-        <div className="mb-6">
+        <div className="mb-2">
           <ErrorMessage message={error} />
         </div>
       ) : null}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-[var(--border)] mt-2">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Vehicle Registry</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Manage and monitor fleet assets across all regions.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">Vehicle Registry</h1>
+          <p className="text-sm font-medium text-[var(--text-secondary)]">Manage and monitor fleet assets across all regions.</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[var(--bg-surface)] px-3 py-2 rounded border border-[var(--warning)]/30">
-            <ShieldAlert size={14} className="text-[var(--warning)] hidden sm:block" />
-            <span className="text-xs font-semibold text-[var(--text-secondary)] hidden sm:inline">Mock Role:</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-[var(--bg-surface)] px-4 py-2.5 rounded-xl border border-[var(--warning)]/30 shadow-sm">
+            <ShieldAlert size={16} className="text-[var(--warning)] hidden sm:block" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] hidden sm:inline mr-1">Role:</span>
             <select
-              className="bg-transparent text-sm font-bold text-[var(--brand-primary)] focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-bold text-[var(--brand-accent)] focus:outline-none cursor-pointer appearance-none"
               value={role}
               onChange={(event) => setRole(event.target.value)}
             >
               {Object.values(VEHICLE_ROLES).map((nextRole) => (
-                <option key={nextRole} value={nextRole}>
+                <option key={nextRole} value={nextRole} className="bg-[var(--bg-surface)] text-[var(--text-primary)] font-medium">
                   {nextRole}
                 </option>
               ))}
@@ -158,14 +167,22 @@ export default function VehiclesPage() {
           </div>
 
           {isManager ? (
-            <button onClick={openAddForm} className="btn-primary flex items-center gap-2 shadow-[var(--shadow-md)]">
-              <Plus size={18} /> Add Vehicle
-            </button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={openAddForm}
+              className="bg-[var(--brand-accent)] text-black font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-[var(--brand-accent)]/20 hover:shadow-[var(--brand-accent)]/40 transition-all duration-300"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              <span>Add Vehicle</span>
+            </motion.button>
           ) : null}
         </div>
-      </div>
+      </header>
 
-      <VehicleFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <div className="sticky top-20 z-20">
+        <VehicleFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      </div>
 
       <VehicleTable
         vehicles={paginatedVehicles}
@@ -190,18 +207,14 @@ export default function VehiclesPage() {
       <VehicleDetailsDrawer isOpen={Boolean(viewingVehicle)} onClose={() => setViewingVehicle(null)} vehicle={viewingVehicle} />
 
       <Modal isOpen={Boolean(deletingVehicle)} onClose={() => setDeletingVehicle(null)} title="Remove Vehicle">
-        <p className="text-sm text-[var(--text-secondary)] mb-6">
-          Are you sure you want to remove{' '}
-          <span className="font-bold text-[var(--text-primary)]">
-            {deletingVehicle?.name} ({deletingVehicle?.plate})
-          </span>
-          ? This action cannot be undone.
+        <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
+          Are you sure you want to remove <span className="font-bold text-[var(--text-primary)]">{deletingVehicle?.name}</span> ({deletingVehicle?.plate})? This action cannot be undone and will permanently delete the vehicle record.
         </p>
-        <div className="flex justify-end gap-3">
-          <button className="btn-secondary" onClick={() => setDeletingVehicle(null)}>
+        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
+          <button className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-main)] hover:text-[var(--text-primary)] transition-all" onClick={() => setDeletingVehicle(null)}>
             Cancel
           </button>
-          <button className="btn-primary !bg-[var(--danger)] hover:!bg-red-700" onClick={confirmDelete}>
+          <button className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--danger)] text-white hover:bg-red-600 shadow-md shadow-[var(--danger)]/20 transition-all" onClick={confirmDelete}>
             Yes, Remove
           </button>
         </div>
@@ -212,34 +225,26 @@ export default function VehiclesPage() {
         onClose={() => setMaintenanceAction(null)}
         title={maintenanceAction?.type === 'approve' ? 'Maintenance Approval' : 'Send to Maintenance'}
       >
-        <p className="text-sm text-[var(--text-secondary)] mb-6">
+        <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
           {maintenanceAction?.type === 'approve' ? (
             <>
-              Approve maintenance for{' '}
-              <span className="font-bold text-[var(--text-primary)]">
-                {maintenanceAction?.vehicle?.name} ({maintenanceAction?.vehicle?.plate})
-              </span>
-              ? The vehicle will be moved to <span className="font-semibold text-[var(--text-primary)]">In Shop</span>.
+              Approve maintenance request for <span className="font-bold text-[var(--text-primary)]">{maintenanceAction?.vehicle?.name}</span> ({maintenanceAction?.vehicle?.plate})? It will be moved to <span className="font-semibold text-[var(--warning)]">In Shop</span>.
             </>
           ) : (
             <>
-              Send{' '}
-              <span className="font-bold text-[var(--text-primary)]">
-                {maintenanceAction?.vehicle?.name} ({maintenanceAction?.vehicle?.plate})
-              </span>{' '}
-              for maintenance? This will mark the vehicle as <span className="font-semibold text-[var(--text-primary)]">Maintenance Requested</span>.
+              Send <span className="font-bold text-[var(--text-primary)]">{maintenanceAction?.vehicle?.name}</span> ({maintenanceAction?.vehicle?.plate}) for maintenance? It will be marked as <span className="font-semibold text-[var(--warning)]">Maintenance Requested</span>.
             </>
           )}
         </p>
-        <div className="flex justify-end gap-3">
-          <button className="btn-secondary" onClick={() => setMaintenanceAction(null)}>
+        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
+          <button className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-main)] hover:text-[var(--text-primary)] transition-all" onClick={() => setMaintenanceAction(null)}>
             Cancel
           </button>
-          <button className="btn-primary" onClick={confirmMaintenanceAction}>
+          <button className={`px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-md transition-all ${maintenanceAction?.type === 'approve' ? 'bg-[var(--success)] hover:bg-green-600 shadow-[var(--success)]/20' : 'bg-[var(--warning)] hover:bg-yellow-600 shadow-[var(--warning)]/20'}`} onClick={confirmMaintenanceAction}>
             {maintenanceAction?.type === 'approve' ? 'Approve' : 'Send'}
           </button>
         </div>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

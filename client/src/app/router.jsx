@@ -135,7 +135,7 @@ export default function makeRouter() {
       element: <RootLayout />,
       errorElement: <FeatureComingSoon />,
       children: [
-        { index: true, element: <Navigate to="/dashboard" replace /> },
+        { index: true, element: <LazyRoute importer={() => import('./pages/HomePage')} featureName="home" /> },
         {
           element: <AppShell />,
           errorElement: <FeatureComingSoon />,

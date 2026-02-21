@@ -77,8 +77,8 @@ api.interceptors.response.use(
 
       try {
         const path = window?.location?.pathname || '';
-        const isOnAuthRoute = path.startsWith('/login') || path.startsWith('/signup') || path.startsWith('/register');
-        if (!isOnAuthRoute) {
+        const isPublicRoute = path === '/' || path.startsWith('/login') || path.startsWith('/signup') || path.startsWith('/register');
+        if (!isPublicRoute) {
           window.location.assign('/login');
         }
       } catch {

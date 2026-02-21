@@ -5,33 +5,36 @@ import { fadeUp, staggerContainer } from './motionVariants';
 
 export default function KPISection() {
   const metrics = [
-    { title: 'Active Fleet', value: 1240, suffix: '+', decimals: 0 },
-    { title: 'Utilization Rate', value: 94, suffix: '%', decimals: 0 },
-    { title: 'Maintenance Alerts', value: 12, suffix: '', decimals: 0 },
-    { title: 'Op. Cost / KM', value: 1.24, prefix: '$', decimals: 2 },
+    { title: 'Vehicles Managed', value: 500, suffix: '+', decimals: 0 },
+    { title: 'Trips Completed', value: 10000, suffix: '+', decimals: 0 },
+    { title: 'Cost Reduction', value: 25, suffix: '%', decimals: 0 },
+    { title: 'Fleet Utilization', value: 98, suffix: '%', decimals: 0 },
   ];
 
   return (
-    <section id="metrics" className="py-24 bg-(--bg-main)">
+    <section id="metrics" className="py-24 bg-[#0B1220] relative border-t border-(--border)/10">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6"
+          viewport={{ once: true, margin: '-100px' }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {metrics.map((metric) => (
             <motion.div
               key={metric.title}
               variants={fadeUp}
-              className="relative overflow-hidden p-6 md:p-8 rounded-2xl bg-(--bg-surface) border border-(--border) flex flex-col items-center text-center group"
+              className="relative overflow-hidden p-8 rounded-2xl bg-[#111827] border border-(--border)/20 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_40px_rgba(56,189,248,0.1)]"
             >
-              <div className="absolute inset-0 bg-linear-to-b from-(--bg-surface) to-(--bg-main) opacity-0 group-hover:opacity-100 transition-opacity" />
-              <p className="text-sm font-medium text-(--text-secondary) mb-4 relative z-10 uppercase tracking-wider">
+              {/* Subtle hover gradient */}
+              <div className="absolute inset-0 bg-linear-to-b from-(--brand-accent)/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+              <p className="text-sm font-bold text-(--text-muted) mb-3 relative z-10 uppercase tracking-widest group-hover:text-(--brand-accent) transition-colors">
                 {metric.title}
               </p>
-              <h3 className="text-4xl md:text-5xl font-semibold text-(--text-primary) font-mono relative z-10">
+
+              <h3 className="text-5xl font-bold text-(--text-primary) tracking-tight relative z-10">
                 <AnimatedCounter
                   value={metric.value}
                   prefix={metric.prefix}

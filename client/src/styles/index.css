@@ -98,3 +98,143 @@ button {
 .btn-accent:hover {
   background-color: var(--brand-accent-hover);
 }
+
+@layer utilities {
+  .bg-main {
+    background-color: var(--bg-main);
+  }
+
+  .bg-surface {
+    background-color: var(--bg-surface);
+  }
+
+  .text-primary {
+    color: var(--text-primary);
+  }
+
+  .text-muted {
+    color: var(--text-secondary);
+  }
+
+  .border-default {
+    border-color: var(--border);
+  }
+
+  .shadow-sm-token {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-md-token {
+    box-shadow: var(--shadow-md);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1rem;
+    white-space: nowrap;
+  }
+
+  .badge-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+    background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+  }
+
+  .badge-warning {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+    background-color: color-mix(in srgb, var(--warning) 12%, transparent);
+  }
+
+  .status-success {
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 55%, transparent);
+    background-color: color-mix(in srgb, var(--success) 12%, transparent);
+  }
+
+  .status-warning {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+    background-color: color-mix(in srgb, var(--warning) 12%, transparent);
+  }
+
+  .status-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+    background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+  }
+
+  .status-neutral {
+    color: var(--text-secondary);
+    border-color: var(--border);
+    background-color: var(--bg-surface);
+  }
+
+  /* --- NEW PREMIUM ADDITIONS START HERE --- */
+  
+  /* Accent text utility */
+  .text-accent {
+    color: var(--brand-accent);
+  }
+
+  /* Elegant underline for headers */
+  .premium-header {
+    position: relative;
+    display: inline-block;
+  }
+  .premium-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    height: 3px;
+    width: 48px;
+    background-color: var(--brand-accent);
+    border-radius: 4px;
+  }
+
+  /* Subtle, luxurious hover effect for table rows */
+  .table-row-hover {
+    transition: background-color 0.2s ease;
+  }
+  .table-row-hover:hover {
+    background-color: color-mix(in srgb, var(--brand-accent) 4%, transparent);
+  }
+
+  /* Luxury circular avatar placeholder */
+  .avatar-premium {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 9999px;
+    background-color: color-mix(in srgb, var(--brand-accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-accent) 25%, transparent);
+    color: var(--brand-accent);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  /* Elegant badge specifically for the safety score */
+  .score-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-sm);
+  }
+}

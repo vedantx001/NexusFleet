@@ -29,12 +29,12 @@ export default function AppShell() {
     <div className="min-h-full">
       <header className="border-b border-(--border) bg-(--bg-surface) backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link className="text-sm font-bold tracking-tight text-(--text-primary)" to="/">
+          <Link className="text-sm font-bold tracking-tight text-(--text-primary)" to="/dashboard">
             Template
           </Link>
 
           <nav className="flex items-center gap-2">
-            <NavLink to="/" className={navLinkClass} end>
+            <NavLink to="/dashboard" className={navLinkClass} end>
               Home
             </NavLink>
 
@@ -46,8 +46,20 @@ export default function AppShell() {
                 <NavLink to="/vehicles" className={navLinkClass}>
                   Vehicles
                 </NavLink>
-                <NavLink to="/dispatch" className={navLinkClass}>
+                <NavLink to="/drivers" className={navLinkClass}>
+                  Drivers
+                </NavLink>
+                <NavLink to="/trips" className={navLinkClass}>
                   Trip Dispatcher
+                </NavLink>
+                <NavLink to="/maintenance" className={navLinkClass}>
+                  Maintenance
+                </NavLink>
+                <NavLink to="/expenses" className={navLinkClass}>
+                  Expenses
+                </NavLink>
+                <NavLink to="/analytics" className={navLinkClass}>
+                  Analytics
                 </NavLink>
                 <button
                   className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-(--border) bg-(--bg-main) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-surface)"
@@ -62,8 +74,8 @@ export default function AppShell() {
                 <NavLink to="/login" className={navLinkClass}>
                   Login
                 </NavLink>
-                <NavLink to="/signup" className={navLinkClass}>
-                  Signup
+                <NavLink to="/register" className={navLinkClass}>
+                  Register
                 </NavLink>
               </>
             )}

@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, CheckCircle2, Plus, Truck, User, X } from 'lucide-react';
 import { useFleet } from './fleetStore';
+import ModalForm from '../../../components/forms/ModalForm';
+import { VEHICLE_STATUSES } from '../../../features/vehicles/constants/vehicleConstants';
+import { isLicenseExpired } from '../../../context/FleetContext';
 
 function StatusBadge({ status }) {
   const styleMap = {
@@ -46,7 +49,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function TripRow({ trip, vehicle, driver }) {
+function TripRow({ trip, vehicle, driver, onRequestComplete }) {
   const { dispatch } = useFleet();
 
   const canDispatch = trip.status?.trim().toLowerCase() === 'draft';
@@ -101,7 +104,7 @@ function TripRow({ trip, vehicle, driver }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               type="button"
-              onClick={() => dispatch({ type: 'UPDATE_TRIP_STATUS', payload: { id: trip.id, status: 'Dispatched' } })}
+              onClick={() => dispatch({ type: 'DISPATCH_TRIP', payload: { id: trip.id } })}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--brand-primary) text-(--bg-surface) font-medium text-sm hover:bg-(--brand-primary-hover) transition-all"
             >
               Dispatch <ArrowRight className="w-4 h-4" />
@@ -115,7 +118,7 @@ function TripRow({ trip, vehicle, driver }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               type="button"
-              onClick={() => dispatch({ type: 'UPDATE_TRIP_STATUS', payload: { id: trip.id, status: 'Completed' } })}
+              onClick={() => onRequestComplete?.(trip, vehicle)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--success) text-white font-medium text-sm hover:opacity-95 transition-opacity"
             >
               Complete <CheckCircle2 className="w-4 h-4" />
@@ -145,13 +148,17 @@ function TripRow({ trip, vehicle, driver }) {
 export default function TripDispatcher() {
   const { trips, dispatch, vehicles, drivers } = useFleet();
 
-  const availableVehicles = useMemo(() => vehicles.filter((v) => v.isAvailable), [vehicles]);
-  const availableDrivers = useMemo(() => drivers.filter((d) => d.isAvailable), [drivers]);
+  const availableVehicles = useMemo(() => vehicles.filter((v) => v.status === VEHICLE_STATUSES.AVAILABLE.id), [vehicles]);
+  const availableDrivers = useMemo(() => drivers.filter((d) => d.status === 'Available' && !isLicenseExpired(d.licenseExpiryDate)), [drivers]);
 
   const vehiclesById = useMemo(() => Object.fromEntries(vehicles.map((v) => [v.id, v])), [vehicles]);
   const driversById = useMemo(() => Object.fromEntries(drivers.map((d) => [d.id, d])), [drivers]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const [completeTripId, setCompleteTripId] = useState('');
+  const [finalOdometer, setFinalOdometer] = useState('');
+  const [completeError, setCompleteError] = useState('');
 
   const [destination, setDestination] = useState('');
   const [cargo, setCargo] = useState('');
@@ -161,20 +168,26 @@ export default function TripDispatcher() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (vehicleId && vehiclesById[vehicleId]?.isAvailable) return;
+    if (vehicleId && vehiclesById[vehicleId]?.status === VEHICLE_STATUSES.AVAILABLE.id) return;
     setVehicleId(availableVehicles[0]?.id || '');
   }, [availableVehicles, vehicleId, vehiclesById]);
 
   useEffect(() => {
-    if (driverId && driversById[driverId]?.isAvailable) return;
-    setDriverId(availableDrivers[0]?.id || '');
-  }, [availableDrivers, driverId, driversById]);
+    const isSelectedCompliant = compliantDrivers.some((d) => String(d.id) === String(driverId));
+    if (driverId && isSelectedCompliant) return;
+    setDriverId(compliantDrivers[0]?.id || '');
+  }, [compliantDrivers, driverId]);
 
   const parsedWeight = cargoWeight === '' ? NaN : Number(cargoWeight);
   const selectedVehicle = vehicleId ? vehiclesById[vehicleId] : undefined;
-  const maxCapacity = selectedVehicle?.maxCapacity;
+  const maxCapacity = selectedVehicle?.capacity;
   const isWeightValid = Number.isFinite(parsedWeight) && parsedWeight > 0;
   const isCapacityOk = isWeightValid && typeof maxCapacity === 'number' ? parsedWeight <= maxCapacity : true;
+
+  const compliantDrivers = useMemo(() => {
+    if (!selectedVehicle?.type) return availableDrivers;
+    return availableDrivers.filter((d) => Array.isArray(d.licenseCategories) && d.licenseCategories.includes(selectedVehicle.type));
+  }, [availableDrivers, selectedVehicle?.type]);
 
   const canCreate =
     destination.trim().length > 0 &&
@@ -184,7 +197,7 @@ export default function TripDispatcher() {
     vehicleId &&
     driverId &&
     availableVehicles.length > 0 &&
-    availableDrivers.length > 0;
+    compliantDrivers.length > 0;
 
   const onCreateTrip = (e) => {
     e.preventDefault();
@@ -201,8 +214,26 @@ export default function TripDispatcher() {
     }
 
     if (selectedVehicle && typeof selectedVehicle.maxCapacity === 'number' && parsedWeight > selectedVehicle.maxCapacity) {
+      // Legacy field guard (old demo vehicles had maxCapacity).
       setError(`Cargo weight exceeds max capacity (${selectedVehicle.maxCapacity}kg).`);
       return;
+    }
+
+    if (selectedVehicle && typeof selectedVehicle.capacity === 'number' && parsedWeight > selectedVehicle.capacity) {
+      setError(`Cargo weight exceeds max capacity (${selectedVehicle.capacity}kg).`);
+      return;
+    }
+
+    const selectedDriver = driverId ? driversById[driverId] : undefined;
+    if (selectedDriver) {
+      if (isLicenseExpired(selectedDriver.licenseExpiryDate)) {
+        setError('Driver license is expired.');
+        return;
+      }
+      if (selectedVehicle?.type && (!Array.isArray(selectedDriver.licenseCategories) || !selectedDriver.licenseCategories.includes(selectedVehicle.type))) {
+        setError(`Driver is not licensed for ${selectedVehicle.type} category.`);
+        return;
+      }
     }
 
     dispatch({
@@ -240,7 +271,7 @@ export default function TripDispatcher() {
         <div className="flex items-center gap-3">
           <div className="text-xs text-(--text-secondary) bg-(--bg-main) border border-(--border) rounded-xl px-3 py-2">
             Available: <span className="font-semibold text-(--text-primary)">{availableVehicles.length}</span> vehicles •{' '}
-            <span className="font-semibold text-(--text-primary)">{availableDrivers.length}</span> drivers
+            <span className="font-semibold text-(--text-primary)">{availableDrivers.length}</span> licensed drivers
           </div>
 
           <button
@@ -328,7 +359,7 @@ export default function TripDispatcher() {
                   {availableVehicles.length === 0 ? <option value="">No vehicles available</option> : null}
                   {availableVehicles.map((v) => (
                     <option key={v.id} value={v.id}>
-                      {v.label} ({v.maxCapacity}kg)
+                      {v.name || v.label} ({typeof v.capacity === 'number' ? v.capacity : v.maxCapacity}kg)
                     </option>
                   ))}
                 </select>
@@ -343,15 +374,20 @@ export default function TripDispatcher() {
                   value={driverId}
                   onChange={(e) => setDriverId(e.target.value)}
                   className="mt-2 w-full rounded-xl border border-(--border) bg-(--bg-surface) px-3 py-2.5 text-sm text-(--text-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-accent)"
-                  disabled={availableDrivers.length === 0}
+                  disabled={compliantDrivers.length === 0}
                 >
-                  {availableDrivers.length === 0 ? <option value="">No drivers available</option> : null}
-                  {availableDrivers.map((d) => (
+                  {compliantDrivers.length === 0 ? <option value="">No licensed drivers available</option> : null}
+                  {compliantDrivers.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
                     </option>
                   ))}
                 </select>
+                {selectedVehicle?.type ? (
+                  <p className="mt-2 text-xs text-(--text-secondary)">
+                    License required: <span className="font-semibold text-(--text-primary)">{selectedVehicle.type}</span>
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -398,6 +434,12 @@ export default function TripDispatcher() {
                   trip={trip}
                   vehicle={trip.vehicleId ? vehiclesById[trip.vehicleId] : undefined}
                   driver={trip.driverId ? driversById[trip.driverId] : undefined}
+                  onRequestComplete={(nextTrip, nextVehicle) => {
+                    setCompleteError('');
+                    setCompleteTripId(nextTrip?.id || '');
+                    const prefill = nextVehicle?.odometer;
+                    setFinalOdometer(typeof prefill === 'number' ? String(prefill) : '');
+                  }}
                 />
               ))}
             </div>
@@ -408,6 +450,52 @@ export default function TripDispatcher() {
           )}
         </AnimatePresence>
       </div>
+
+      <ModalForm
+        open={Boolean(completeTripId)}
+        title="Complete Trip"
+        onClose={() => {
+          setCompleteTripId('');
+          setFinalOdometer('');
+          setCompleteError('');
+        }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setCompleteError('');
+
+          const numeric = finalOdometer === '' ? NaN : Number(finalOdometer);
+          if (!Number.isFinite(numeric) || numeric < 0) {
+            setCompleteError('Enter a valid final odometer reading.');
+            return;
+          }
+
+          dispatch({ type: 'COMPLETE_TRIP', payload: { id: completeTripId, endOdometer: numeric } });
+          setCompleteTripId('');
+          setFinalOdometer('');
+        }}
+        submitLabel="Mark Done"
+      >
+        {completeError ? (
+          <div className="p-4 mb-2 bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] rounded-xl text-sm text-[var(--danger)] font-medium">
+            {completeError}
+          </div>
+        ) : null}
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-widest text-muted mb-1" htmlFor="finalOdo">
+            Final Odometer (km)
+          </label>
+          <input
+            id="finalOdo"
+            type="number"
+            min={0}
+            className="mt-2 w-full rounded-xl border border-default bg-surface px-4 py-3 text-sm text-primary transition-all duration-200 outline-none focus:border-[var(--brand-accent)] focus:ring-1 focus:ring-[var(--brand-accent)] shadow-sm-token"
+            value={finalOdometer}
+            onChange={(e) => setFinalOdometer(e.target.value)}
+            required
+          />
+        </div>
+      </ModalForm>
     </motion.div>
   );
 }

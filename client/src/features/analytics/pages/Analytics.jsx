@@ -1,23 +1,84 @@
-import React from "react";
+import React, { useMemo } from 'react';
 import KPIcard from "../../../components/layout/KPIcard";
+import { useFleet } from '../../../context/FleetContext';
 
 export default function Analytics() {
+  const { trips, fuelLogs } = useFleet();
+
+  const lastCompletedTrip = useMemo(() => {
+    const completed = Array.isArray(trips) ? trips.filter((t) => t?.status === 'Completed') : [];
+    if (!completed.length) return null;
+
+    const byTime = [...completed].sort((a, b) => {
+      const aTime = a?.completedAt ? new Date(a.completedAt).getTime() : 0;
+      const bTime = b?.completedAt ? new Date(b.completedAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return byTime[0] || null;
+  }, [trips]);
+
+  const derived = useMemo(() => {
+    if (!lastCompletedTrip) {
+      return {
+        fuelEfficiency: null,
+        costPerKm: null,
+      };
+    }
+
+    const startOdo = typeof lastCompletedTrip.startOdometer === 'number' ? lastCompletedTrip.startOdometer : null;
+    const endOdo = typeof lastCompletedTrip.endOdometer === 'number' ? lastCompletedTrip.endOdometer : null;
+    const distanceKm = startOdo != null && endOdo != null ? Math.max(0, endOdo - startOdo) : null;
+
+    const vehicleId = String(lastCompletedTrip.vehicleId || '');
+    const startDate = lastCompletedTrip.dispatchedAt ? String(lastCompletedTrip.dispatchedAt).slice(0, 10) : '';
+    const endDate = lastCompletedTrip.completedAt ? String(lastCompletedTrip.completedAt).slice(0, 10) : '';
+
+    const relevantFuel = (Array.isArray(fuelLogs) ? fuelLogs : []).filter((entry) => {
+      if (!entry || String(entry.vehicleId) !== vehicleId) return false;
+      if (!startDate || !endDate) return true;
+
+      const d = String(entry.date || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return true;
+      return d >= startDate && d <= endDate;
+    });
+
+    const totalCost = relevantFuel.reduce((sum, entry) => {
+      const amount = typeof entry.amount === 'number' ? entry.amount : Number(entry.amount);
+      return Number.isFinite(amount) ? sum + amount : sum;
+    }, 0);
+
+    const totalLiters = relevantFuel.reduce((sum, entry) => {
+      const liters = typeof entry.liters === 'number' ? entry.liters : Number(entry.liters);
+      return Number.isFinite(liters) ? sum + liters : sum;
+    }, 0);
+
+    const costPerKm = distanceKm && distanceKm > 0 ? totalCost / distanceKm : null;
+    const fuelEfficiency = distanceKm && distanceKm > 0 && totalLiters > 0 ? distanceKm / totalLiters : null;
+
+    return {
+      fuelEfficiency,
+      costPerKm,
+    };
+  }, [fuelLogs, lastCompletedTrip]);
+
   const kpis = [
     {
-      title: "Average Fuel Efficiency",
-      value: "—",
-      label: "km / L",
+      title: 'Average Fuel Efficiency',
+      value: derived.fuelEfficiency == null ? '—' : derived.fuelEfficiency.toFixed(2),
+      label: 'km / L',
+      description: lastCompletedTrip ? `Based on last completed trip (${lastCompletedTrip.id}).` : 'No completed trips yet.',
     },
     {
-      title: "Vehicle ROI",
-      value: "—",
-      label: "Placeholder only",
-      description: "(Revenue − (Maintenance + Fuel)) / Acquisition Cost",
+      title: 'Operational Cost / KM',
+      value: derived.costPerKm == null ? '—' : derived.costPerKm.toFixed(2),
+      label: '₹ / km',
+      description: 'Fuel cost divided by trip distance.',
     },
   ];
 
   const handleExport = (format) => {
-    console.log("Exporting report...", { format });
+    console.log('Exporting report...', { format });
   };
 
   return (

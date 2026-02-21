@@ -71,8 +71,8 @@ export default function KPIGrid({ filters, pulseKey }) {
     const totalVehicles = filteredVehicles.length;
     const activeFleet = filteredVehicles.filter((v) => v.status === 'On Trip').length;
     const maintenanceAlerts = filteredVehicles.filter((v) => v.status === 'In Shop').length;
-    const idleAvailable = filteredVehicles.filter((v) => v.status === 'Idle' && v.isAvailable).length;
-    const utilizationRate = totalVehicles ? Math.min(100, Math.round(((totalVehicles - idleAvailable) / totalVehicles) * 100)) : 0;
+    const available = filteredVehicles.filter((v) => v.status === 'Available').length;
+    const utilizationRate = totalVehicles ? Math.min(100, Math.round(((totalVehicles - available) / totalVehicles) * 100)) : 0;
 
     const pendingCargo = trips.filter((t) => {
       if (t.status !== 'Draft') return false;

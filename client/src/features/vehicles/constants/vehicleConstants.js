@@ -27,7 +27,7 @@ export const INITIAL_VEHICLES = [
     name: 'Van-05',
     plate: 'VAN-8892',
     type: 'Van',
-    capacity: 1500,
+    capacity: 500,
     odometer: 45000,
     status: 'Available',
     region: 'North',

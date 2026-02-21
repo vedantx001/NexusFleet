@@ -37,12 +37,11 @@ export default function StatusOverview({ filters, onSync }) {
   );
 
   const counts = useMemo(() => {
-    const available = filteredVehicles.filter((v) => v.isAvailable && v.status === 'Idle').length;
+    const available = filteredVehicles.filter((v) => v.status === 'Available').length;
     const onTrip = filteredVehicles.filter((v) => v.status === 'On Trip').length;
     const inShop = filteredVehicles.filter((v) => v.status === 'In Shop').length;
-    const idle = filteredVehicles.filter((v) => v.status === 'Idle').length;
 
-    return { available, onTrip, inShop, idle };
+    return { available, onTrip, inShop };
   }, [filteredVehicles]);
 
   return (
@@ -68,7 +67,7 @@ export default function StatusOverview({ filters, onSync }) {
         <StatusTile icon={CheckCircle2} label="Available" count={counts.available} />
         <StatusTile icon={Activity} label="On Trip" count={counts.onTrip} />
         <StatusTile icon={AlertTriangle} label="In Shop" count={counts.inShop} />
-        <StatusTile icon={Clock} label="Idle" count={counts.idle} />
+        <StatusTile icon={Clock} label="Total" count={filteredVehicles.length} />
       </div>
     </motion.section>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import FilterDropdown from './FilterDropdown';
 
 export const VEHICLE_TYPE_OPTIONS = ['All', 'Truck', 'Van', 'Bike'];
-export const VEHICLE_STATUS_OPTIONS = ['All', 'On Trip', 'Idle', 'In Shop'];
+export const VEHICLE_STATUS_OPTIONS = ['All', 'Available', 'On Trip', 'In Shop'];
 export const REGION_OPTIONS = ['All', 'North America', 'EMEA', 'APAC'];
 
 export default function CommandCenterFilters({ filters, onChange }) {

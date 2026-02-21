@@ -7,7 +7,9 @@ export const drivers = [
     name: 'Aisha Khan',
     licenseNumber: 'DL-4821-AX',
     licenseExpiryDate: '2027-05-14',
+    licenseCategories: ['Van', 'Truck'],
     dutyStatus: 'On Duty',
+    status: 'Available',
     safetyScore: 92,
   },
   {
@@ -15,7 +17,9 @@ export const drivers = [
     name: 'Mateo Silva',
     licenseNumber: 'DL-1039-MS',
     licenseExpiryDate: '2024-11-02',
+    licenseCategories: ['Van'],
     dutyStatus: 'Off Duty',
+    status: 'Available',
     safetyScore: 76,
   },
   {
@@ -23,7 +27,9 @@ export const drivers = [
     name: 'Chloe Martin',
     licenseNumber: 'DL-5590-CM',
     licenseExpiryDate: '2026-02-10',
+    licenseCategories: ['Bike'],
     dutyStatus: 'Suspended',
+    status: 'Available',
     safetyScore: 61,
   },
   {
@@ -31,7 +37,9 @@ export const drivers = [
     name: 'Noah Johnson',
     licenseNumber: 'DL-7744-NJ',
     licenseExpiryDate: '2026-12-31',
+    licenseCategories: ['Truck'],
     dutyStatus: 'On Duty',
+    status: 'Available',
     safetyScore: 84,
   },
   {
@@ -39,7 +47,9 @@ export const drivers = [
     name: 'Priya Patel',
     licenseNumber: 'DL-2207-PP',
     licenseExpiryDate: '2025-07-18',
+    licenseCategories: ['Van'],
     dutyStatus: 'Off Duty',
+    status: 'Available',
     safetyScore: 58,
   },
   {
@@ -47,7 +57,9 @@ export const drivers = [
     name: 'Omar Haddad',
     licenseNumber: 'DL-9012-OH',
     licenseExpiryDate: '2028-03-09',
+    licenseCategories: ['Van', 'Bike'],
     dutyStatus: 'Off Duty',
+    status: 'Available',
     safetyScore: 88,
   },
 ];

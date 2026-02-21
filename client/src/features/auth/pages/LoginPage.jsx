@@ -107,7 +107,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-[var(--text-secondary)] mt-6 transition-colors">
           New to the fleet?{' '}
-          <Link to="/signup" className="font-semibold text-[var(--info)] hover:text-[var(--brand-accent)] transition-colors">
+          <Link to="/register" className="font-semibold text-[var(--info)] hover:text-[var(--brand-accent)] transition-colors">
             Request Account Registration
           </Link>
         </p>

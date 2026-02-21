@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import DataTable from '../../../components/table/DataTable';
 import ModalForm from '../../../components/forms/ModalForm';
-import vehiclesData from '../../../mock/vehicles';
-import expensesData from '../../../mock/expenses';
+import { useFleet } from '../../../context/FleetContext';
 
 function pad2(value) {
   return String(value).padStart(2, '0');
@@ -51,12 +50,14 @@ function asPositiveNumber(value) {
 }
 
 export default function ExpenseFuel() {
-  const vehicles = Array.isArray(vehiclesData) ? vehiclesData : [];
-  const seedExpenses = Array.isArray(expensesData) ? expensesData : [];
-
-  const [expenses, setExpenses] = useState(() => seedExpenses);
+  const { vehicles, fuelLogs, dispatch } = useFleet();
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const expenseRows = useMemo(
+    () => (Array.isArray(fuelLogs) ? fuelLogs.map((entry) => ({ ...entry, type: 'Fuel' })) : []),
+    [fuelLogs],
+  );
 
   const [formValues, setFormValues] = useState(() => ({
     vehicleId: '',
@@ -70,8 +71,8 @@ export default function ExpenseFuel() {
   function getOperationalCostForVehicle(vehicleId) {
     if (!vehicleId) return 0;
 
-    return expenses.reduce((sum, entry) => {
-      if (!entry || entry.vehicleId !== vehicleId) return sum;
+    return fuelLogs.reduce((sum, entry) => {
+      if (!entry || String(entry.vehicleId) !== String(vehicleId)) return sum;
 
       const amount = typeof entry.amount === 'number' ? entry.amount : Number(entry.amount);
       if (!Number.isFinite(amount)) return sum;
@@ -172,16 +173,15 @@ export default function ExpenseFuel() {
       return;
     }
 
-    const entry = {
-      id: `exp-fuel-${Date.now()}`,
-      vehicleId,
-      type: 'Fuel',
-      liters,
-      amount: totalCost,
-      date,
-    };
-
-    setExpenses((prev) => [entry, ...(Array.isArray(prev) ? prev : [])]);
+    dispatch({
+      type: 'LOG_FUEL',
+      payload: {
+        vehicleId,
+        liters,
+        amount: totalCost,
+        date,
+      },
+    });
     setSelectedVehicleId(vehicleId);
     setIsModalOpen(false);
 
@@ -243,7 +243,7 @@ export default function ExpenseFuel() {
             <div className="text-sm text-muted">Updates in real-time</div>
           </div>
 
-          <DataTable columns={columns} data={expenses} rowKey="id" emptyMessage="No expenses logged yet" />
+          <DataTable columns={columns} data={expenseRows} rowKey="id" emptyMessage="No expenses logged yet" />
         </div>
 
         {/* Form Modal */}

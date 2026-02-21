@@ -6,15 +6,15 @@ import VehicleDetailsDrawer from '../components/VehicleDetailsDrawer';
 import VehicleFilters from '../components/VehicleFilters';
 import VehicleForm from '../components/VehicleForm';
 import VehicleTable from '../components/VehicleTable';
-import { INITIAL_VEHICLES, VEHICLE_ROLES, VEHICLE_STATUSES } from '../constants/vehicleConstants';
+import { VEHICLE_ROLES, VEHICLE_STATUSES } from '../constants/vehicleConstants';
 import useVehicleFilters from '../hooks/useVehicleFilters';
-import { createVehicle, normalizeVehicle } from '../services/vehicleService';
+import { useFleet } from '../../../context/FleetContext';
 
 export default function VehiclesPage() {
+  const { vehicles, dispatch } = useFleet();
   const [role, setRole] = useState(VEHICLE_ROLES.MANAGER);
   const isManager = role === VEHICLE_ROLES.MANAGER;
 
-  const [vehicles, setVehicles] = useState(INITIAL_VEHICLES);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ type: 'All', status: 'All' });
 
@@ -35,12 +35,22 @@ export default function VehiclesPage() {
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage) || 1;
 
   const handleSaveVehicle = (formData) => {
-    const normalizedData = normalizeVehicle(formData);
-
     if (editingVehicle) {
-      setVehicles((prev) => prev.map((vehicle) => (vehicle.id === editingVehicle.id ? { ...vehicle, ...normalizedData } : vehicle)));
+      dispatch({
+        type: 'UPDATE_VEHICLE',
+        payload: {
+          id: editingVehicle.id,
+          patch: formData,
+        },
+      });
     } else {
-      setVehicles((prev) => [createVehicle(normalizedData), ...prev]);
+      dispatch({
+        type: 'ADD_VEHICLE',
+        payload: {
+          ...formData,
+          status: VEHICLE_STATUSES.AVAILABLE.id,
+        },
+      });
     }
 
     setIsFormOpen(false);
@@ -48,20 +58,20 @@ export default function VehiclesPage() {
   };
 
   const handleToggleOOS = (id, setToOutOfService) => {
-    setVehicles((prev) =>
-      prev.map((vehicle) => {
-        if (vehicle.id !== id) return vehicle;
-        return {
-          ...vehicle,
+    dispatch({
+      type: 'UPDATE_VEHICLE',
+      payload: {
+        id,
+        patch: {
           status: setToOutOfService ? VEHICLE_STATUSES.OUT_OF_SERVICE.id : VEHICLE_STATUSES.AVAILABLE.id,
-        };
-      }),
-    );
+        },
+      },
+    });
   };
 
   const confirmDelete = () => {
     if (!deletingVehicle) return;
-    setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== deletingVehicle.id));
+    dispatch({ type: 'DELETE_VEHICLE', payload: { id: deletingVehicle.id } });
     setDeletingVehicle(null);
   };
 
@@ -77,24 +87,17 @@ export default function VehiclesPage() {
     if (!maintenanceAction?.vehicle) return;
 
     const { vehicle, type } = maintenanceAction;
-    setVehicles((prev) =>
-      prev.map((item) => {
-        if (item.id !== vehicle.id) return item;
 
-        if (type === 'send') {
-          return {
-            ...item,
-            status: VEHICLE_STATUSES.MAINTENANCE_REQUESTED.id,
-          };
-        }
-
-        return {
-          ...item,
-          status: VEHICLE_STATUSES.IN_SHOP.id,
-          lastMaintained: new Date().toISOString().split('T')[0],
-        };
-      }),
-    );
+    dispatch({
+      type: 'UPDATE_VEHICLE',
+      payload: {
+        id: vehicle.id,
+        patch:
+          type === 'send'
+            ? { status: VEHICLE_STATUSES.MAINTENANCE_REQUESTED.id }
+            : { status: VEHICLE_STATUSES.IN_SHOP.id, lastMaintained: new Date().toISOString().split('T')[0] },
+      },
+    });
 
     setMaintenanceAction(null);
   };

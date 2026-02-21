@@ -1,0 +1,68 @@
+###
+# MERN Template API smoke tests (VS Code REST Client)
+# 1) Start server: npm run dev (or npm start)
+# 2) Run requests top-to-bottom.
+# 3) Login sets httpOnly cookie; /me (cookie) should work after login if cookies are remembered.
+
+@baseUrl = http://localhost:5000
+@apiUrl = {{baseUrl}}/api
+@contentType = application/json
+@testName = Hackathon User
+@testEmail = hackathon@example.com
+@testPassword = 12345678
+
+### Health Check
+GET {{apiUrl}}/health
+Accept: application/json
+
+### Register (creates a new user)
+# Uses timestamp email so you can run repeatedly
+POST {{apiUrl}}/auth/register
+Content-Type: {{contentType}}
+Accept: application/json
+
+{
+  "name": "{{testName}}",
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### Login (sets auth cookie)
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### Current User - Cookie based auth
+# Run after Login. REST Client should send stored cookie for same host.
+GET {{apiUrl}}/auth/me
+Accept: application/json
+
+### Current User - Bearer token auth (manual)
+# Paste JWT below if you want to test Authorization header flow.
+@accessToken = PASTE_JWT_HERE
+GET {{apiUrl}}/auth/me
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Logout (clears cookie)
+POST {{apiUrl}}/auth/logout
+Accept: application/json
+
+### Current User after logout (should be 401)
+GET {{apiUrl}}/auth/me
+Accept: application/json
+
+### Negative test - login with wrong password (should be 401)
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "wrong-password"
+}

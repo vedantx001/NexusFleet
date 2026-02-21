@@ -100,8 +100,7 @@ Frontend: - React.js
 
 Backend: - Node.js - Express.js
 
-Database: - Relatonal Model linking Vehicles, Trips, Expenses, and
-Drivers.
+Database: - MongoDB
 
 ------------------------------------------------------------------------
 
@@ -109,7 +108,7 @@ Drivers.
 
 Clone repository:
 
-git clone https://github.com/yourusername/fleetflow.git
+git clone https://github.com/vedantx001/NexusFleet.git
 
 Install dependencies:
 
@@ -150,9 +149,9 @@ Ideal for logistics companies, delivery startups, and fleet operators.
 
 Built during a Hackathon by:
 
--   Your Name
--   Team Member
--   Team Member
+-   Vedant Patel
+-   Aryan Prajapati
+-   Vraj Patel
 
 ------------------------------------------------------------------------
 

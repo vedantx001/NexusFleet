@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Moon, Sun } from 'lucide-react';
 import useAuth from '../../features/auth/hooks/useAuth';
 
 export default function AppShell() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
 
   const onLogout = async () => {
     await logout();
@@ -14,14 +20,16 @@ export default function AppShell() {
   const navLinkClass = ({ isActive }) =>
     [
       'rounded-lg px-3 py-2 text-sm font-semibold transition',
-      isActive ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
+      isActive
+        ? 'bg-(--brand-primary) text-(--bg-surface)'
+        : 'text-(--text-secondary) hover:bg-(--bg-main) hover:text-(--text-primary)',
     ].join(' ');
 
   return (
     <div className="min-h-full">
-      <header className="border-b border-slate-800 bg-slate-950/60 backdrop-blur">
+      <header className="border-b border-(--border) bg-(--bg-surface) backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link className="text-sm font-bold tracking-tight text-white" to="/">
+          <Link className="text-sm font-bold tracking-tight text-(--text-primary)" to="/">
             Template
           </Link>
 
@@ -29,6 +37,7 @@ export default function AppShell() {
             <NavLink to="/" className={navLinkClass} end>
               Home
             </NavLink>
+
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" className={navLinkClass}>
@@ -37,7 +46,14 @@ export default function AppShell() {
                 <NavLink to="/vehicles" className={navLinkClass}>
                   Vehicles
                 </NavLink>
-                <button className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-700 bg-transparent text-slate-100 hover:bg-slate-800" type="button" onClick={onLogout}>
+                <NavLink to="/dispatch" className={navLinkClass}>
+                  Trip Dispatcher
+                </NavLink>
+                <button
+                  className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-(--border) bg-(--bg-main) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-surface)"
+                  type="button"
+                  onClick={onLogout}
+                >
                   Logout
                 </button>
               </>
@@ -51,9 +67,19 @@ export default function AppShell() {
                 </NavLink>
               </>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsDark((v) => !v)}
+              className="ml-2 inline-flex items-center justify-center rounded-xl p-2.5 transition border border-(--border) bg-(--bg-main) text-(--text-secondary) hover:text-(--brand-accent) focus:outline-none focus:ring-2 focus:ring-(--brand-accent) focus:ring-offset-2 focus:ring-offset-(--bg-surface)"
+              aria-label="Toggle theme"
+              title="Toggle theme"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
           </nav>
 
-          <div className="hidden text-xs text-slate-400 md:block">
+          <div className="hidden text-xs text-(--text-secondary) md:block">
             {isAuthenticated ? `Signed in as ${user?.email || 'user'}` : 'Not signed in'}
           </div>
         </div>
@@ -63,8 +89,8 @@ export default function AppShell() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-slate-800 px-4 py-6">
-        <div className="mx-auto max-w-6xl text-center text-xs text-slate-500">
+      <footer className="border-t border-(--border) px-4 py-6">
+        <div className="mx-auto max-w-6xl text-center text-xs text-(--text-secondary)">
           Built with MERN • Tailwind enabled
         </div>
       </footer>

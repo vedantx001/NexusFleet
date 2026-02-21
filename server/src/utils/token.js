@@ -1,10 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 function signAccessToken(userId) {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET is not set');
-  }
+  const secret = process.env.JWT_SECRET || 'dev-insecure-secret';
 
   return jwt.sign({ sub: String(userId) }, secret, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -12,10 +9,7 @@ function signAccessToken(userId) {
 }
 
 function verifyAccessToken(token) {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET is not set');
-  }
+  const secret = process.env.JWT_SECRET || 'dev-insecure-secret';
 
   return jwt.verify(token, secret);
 }

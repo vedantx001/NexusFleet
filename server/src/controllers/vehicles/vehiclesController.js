@@ -97,8 +97,34 @@ async function updateVehicle(req, res, next) {
   }
 }
 
+async function deleteVehicle(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      const err = new Error('Vehicle id is required');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const vehicle = await Vehicle.findByIdAndDelete(id);
+    if (!vehicle) {
+      const err = new Error('Vehicle not found');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    return sendSuccess(res, {
+      message: 'Vehicle deleted',
+      data: { vehicle },
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
 module.exports = {
   createVehicle,
   listVehicles,
   updateVehicle,
+  deleteVehicle,
 };

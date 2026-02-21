@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { Activity, AlertTriangle, Package, Truck } from 'lucide-react';
 import { useFleet } from './fleetStore';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
 function AnimatedNumber({ value, pulseKey }) {
   const [prev, setPrev] = useState(value);
@@ -58,7 +60,7 @@ function applyVehicleFilters(vehicle, filters) {
 }
 
 export default function KPIGrid({ filters, pulseKey }) {
-  const { vehicles, trips } = useFleet();
+  const { vehicles, trips, isLoading, error } = useFleet();
 
   const vehiclesById = useMemo(() => Object.fromEntries(vehicles.map((v) => [v.id, v])), [vehicles]);
 
@@ -96,15 +98,20 @@ export default function KPIGrid({ filters, pulseKey }) {
   ];
 
   return (
-    <motion.div
-      variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
-      {cards.map((card) => (
-        <KPICard key={card.title} {...card} pulseKey={pulseKey} />
-      ))}
-    </motion.div>
+    <div className="space-y-4">
+      {isLoading && vehicles.length === 0 ? <Loader label="Loading dashboard…" /> : null}
+      {error ? <ErrorMessage message={error} /> : null}
+
+      <motion.div
+        variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+      >
+        {cards.map((card) => (
+          <KPICard key={card.title} {...card} pulseKey={pulseKey} />
+        ))}
+      </motion.div>
+    </div>
   );
 }

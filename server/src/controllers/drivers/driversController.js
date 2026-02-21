@@ -96,8 +96,34 @@ async function updateDriver(req, res, next) {
   }
 }
 
+async function deleteDriver(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      const err = new Error('Driver id is required');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const driver = await Driver.findByIdAndDelete(id);
+    if (!driver) {
+      const err = new Error('Driver not found');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    return sendSuccess(res, {
+      message: 'Driver deleted',
+      data: { driver },
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
 module.exports = {
   createDriver,
   listDrivers,
   updateDriver,
+  deleteDriver,
 };

@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import DataTable from '../../../components/table/DataTable';
 import StatusPill from '../../../components/common/StatusPill';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 import ModalForm from '../../../components/forms/ModalForm';
 import { VEHICLE_TYPES } from '../../vehicles/constants/vehicleConstants';
 import { useFleet, isLicenseExpired } from '../../../context/FleetContext';
@@ -65,7 +67,7 @@ function getInitials(name) {
 }
 
 export default function DriverProfiles() {
-  const { drivers, dispatch } = useFleet();
+  const { drivers, dispatch, isLoading, error } = useFleet();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formError, setFormError] = useState('');
@@ -85,6 +87,20 @@ export default function DriverProfiles() {
     }
     return initial;
   });
+
+  useEffect(() => {
+    if (!Array.isArray(drivers) || !drivers.length) return;
+    setDutyStatusById((prev) => {
+      const next = { ...prev };
+      for (const driver of drivers) {
+        if (!driver?.id) continue;
+        if (next[driver.id] !== undefined) continue;
+        const value = DUTY_STATUSES.includes(driver?.dutyStatus) ? driver.dutyStatus : 'Off Duty';
+        next[driver.id] = value;
+      }
+      return next;
+    });
+  }, [drivers]);
 
   const inputClassName =
     'mt-2 w-full rounded-xl border border-default bg-surface px-4 py-3 text-sm text-primary transition-all duration-200 outline-none focus:border-[var(--brand-accent)] focus:ring-1 focus:ring-[var(--brand-accent)] shadow-sm-token';
@@ -260,6 +276,9 @@ export default function DriverProfiles() {
   return (
     <div className="px-6 py-10 md:py-14 bg-main min-h-full">
       <div className="mx-auto max-w-7xl space-y-8">
+        {isLoading && drivers.length === 0 ? <Loader label="Loading drivers…" /> : null}
+        {error ? <ErrorMessage message={error} /> : null}
+
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary tracking-tight premium-header">Driver Profiles</h1>

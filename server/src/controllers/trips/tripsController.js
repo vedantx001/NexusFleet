@@ -130,7 +130,25 @@ async function completeTrip(req, res, next) {
   }
 }
 
+async function listTrips(req, res, next) {
+  try {
+    const trips = await Trip.find({})
+      .sort({ createdAt: -1 })
+      .populate('vehicle', 'name licensePlate vehicleType status maxCapacityKg odometer')
+      .populate('driver', 'name licenseNumber status licenseCategory')
+      .lean();
+
+    return sendSuccess(res, {
+      message: 'Trips fetched',
+      data: { trips },
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
 module.exports = {
   createTrip,
   completeTrip,
+  listTrips,
 };

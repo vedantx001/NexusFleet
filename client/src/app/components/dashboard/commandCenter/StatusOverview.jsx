@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { useFleet } from '../fleetStore';
+import Loader from '../../../../components/common/Loader';
+import ErrorMessage from '../../../../components/common/ErrorMessage';
+import { getDashboardMetrics } from '../../../../features/dashboard/services/dashboardApi';
 
 function StatusTile({ icon: Icon, label, count }) {
   return (
@@ -29,7 +32,38 @@ function applyVehicleFilters(vehicle, filters) {
 }
 
 export default function StatusOverview({ filters, onSync }) {
-  const { vehicles } = useFleet();
+  const { vehicles, refreshFleet, isLoading, error } = useFleet();
+
+  const [dashboardMetrics, setDashboardMetrics] = useState(null);
+  const [dashboardError, setDashboardError] = useState('');
+
+  const areDefaultFilters =
+    (filters?.type || 'All') === 'All' &&
+    (filters?.status || 'All') === 'All' &&
+    (filters?.region || 'All') === 'All';
+
+  useEffect(() => {
+    if (!areDefaultFilters) return;
+
+    let cancelled = false;
+    setDashboardError('');
+
+    (async () => {
+      try {
+        const metrics = await getDashboardMetrics();
+        if (!cancelled) setDashboardMetrics(metrics);
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err?.friendlyMessage || err?.message || 'Unable to load dashboard metrics.';
+          setDashboardError(String(msg));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [areDefaultFilters]);
 
   const filteredVehicles = useMemo(
     () => vehicles.filter((v) => applyVehicleFilters(v, filters)),
@@ -37,12 +71,26 @@ export default function StatusOverview({ filters, onSync }) {
   );
 
   const counts = useMemo(() => {
+    if (areDefaultFilters && dashboardMetrics) {
+      const idleVehicles = Number(dashboardMetrics?.idleVehicles) || 0;
+      const vehiclesInShop = Number(dashboardMetrics?.vehiclesInShop) || 0;
+      const activeFleet = Number(dashboardMetrics?.activeFleet) || 0;
+      const onTrip = Math.max(0, activeFleet - idleVehicles - vehiclesInShop);
+
+      return {
+        available: idleVehicles,
+        onTrip,
+        inShop: vehiclesInShop,
+        total: activeFleet,
+      };
+    }
+
     const available = filteredVehicles.filter((v) => v.status === 'Available').length;
     const onTrip = filteredVehicles.filter((v) => v.status === 'On Trip').length;
     const inShop = filteredVehicles.filter((v) => v.status === 'In Shop').length;
 
-    return { available, onTrip, inShop };
-  }, [filteredVehicles]);
+    return { available, onTrip, inShop, total: filteredVehicles.length };
+  }, [areDefaultFilters, dashboardMetrics, filteredVehicles]);
 
   return (
     <motion.section
@@ -52,11 +100,18 @@ export default function StatusOverview({ filters, onSync }) {
       viewport={{ once: true, margin: '-50px' }}
       className="space-y-4"
     >
+      {isLoading && vehicles.length === 0 ? <Loader label="Syncing…" /> : null}
+      {error ? <ErrorMessage message={error} /> : null}
+      {dashboardError && !error ? <ErrorMessage message={dashboardError} /> : null}
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-(--text-primary)">Fleet Status Overview</h2>
         <button
           type="button"
-          onClick={onSync}
+          onClick={async () => {
+            await refreshFleet?.();
+            onSync?.();
+          }}
           className="text-sm font-medium text-(--text-secondary) hover:text-(--text-primary) transition-colors"
         >
           Sync Data
@@ -67,7 +122,7 @@ export default function StatusOverview({ filters, onSync }) {
         <StatusTile icon={CheckCircle2} label="Available" count={counts.available} />
         <StatusTile icon={Activity} label="On Trip" count={counts.onTrip} />
         <StatusTile icon={AlertTriangle} label="In Shop" count={counts.inShop} />
-        <StatusTile icon={Clock} label="Total" count={filteredVehicles.length} />
+        <StatusTile icon={Clock} label="Total" count={counts.total} />
       </div>
     </motion.section>
   );

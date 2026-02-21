@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import DataTable from '../../../components/table/DataTable';
 import ModalForm from '../../../components/forms/ModalForm';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 import { useFleet } from '../../../context/FleetContext';
 
 function pad2(value) {
@@ -50,7 +52,7 @@ function asPositiveNumber(value) {
 }
 
 export default function ExpenseFuel() {
-  const { vehicles, fuelLogs, dispatch } = useFleet();
+  const { vehicles, fuelLogs, dispatch, isLoading, error } = useFleet();
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -200,6 +202,8 @@ export default function ExpenseFuel() {
   return (
     <div className="px-6 py-10 md:py-14 bg-main min-h-full">
       <div className="mx-auto max-w-7xl space-y-10">
+        {isLoading && vehicles.length === 0 ? <Loader label="Loading expenses…" /> : null}
+        {error ? <ErrorMessage message={error} /> : null}
         
         {/* Header Section */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">

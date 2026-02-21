@@ -9,9 +9,11 @@ import VehicleTable from '../components/VehicleTable';
 import { VEHICLE_ROLES, VEHICLE_STATUSES } from '../constants/vehicleConstants';
 import useVehicleFilters from '../hooks/useVehicleFilters';
 import { useFleet } from '../../../context/FleetContext';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
 export default function VehiclesPage() {
-  const { vehicles, dispatch } = useFleet();
+  const { vehicles, dispatch, isLoading, error } = useFleet();
   const [role, setRole] = useState(VEHICLE_ROLES.MANAGER);
   const isManager = role === VEHICLE_ROLES.MANAGER;
 
@@ -121,6 +123,17 @@ export default function VehiclesPage() {
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-8 bg-[var(--bg-main)] text-[var(--text-primary)]">
+      {isLoading && vehicles.length === 0 ? (
+        <div className="mb-6">
+          <Loader label="Loading vehicles…" />
+        </div>
+      ) : null}
+      {error ? (
+        <div className="mb-6">
+          <ErrorMessage message={error} />
+        </div>
+      ) : null}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">Vehicle Registry</h1>

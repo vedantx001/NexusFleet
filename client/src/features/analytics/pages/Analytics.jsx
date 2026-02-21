@@ -1,9 +1,36 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import KPIcard from "../../../components/layout/KPIcard";
 import { useFleet } from '../../../context/FleetContext';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
+import { getAnalytics } from '../services/analyticsApi';
 
 export default function Analytics() {
-  const { trips, fuelLogs } = useFleet();
+  const { trips, fuelLogs, isLoading, error } = useFleet();
+
+  const [apiAnalytics, setApiAnalytics] = useState(null);
+  const [apiError, setApiError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setApiError('');
+
+    (async () => {
+      try {
+        const payload = await getAnalytics();
+        if (!cancelled) setApiAnalytics(payload);
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err?.friendlyMessage || err?.message || 'Unable to load analytics.';
+          setApiError(String(msg));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const lastCompletedTrip = useMemo(() => {
     const completed = Array.isArray(trips) ? trips.filter((t) => t?.status === 'Completed') : [];
@@ -65,7 +92,12 @@ export default function Analytics() {
   const kpis = [
     {
       title: 'Average Fuel Efficiency',
-      value: derived.fuelEfficiency == null ? '—' : derived.fuelEfficiency.toFixed(2),
+      value:
+        typeof apiAnalytics?.fuelEfficiency === 'number'
+          ? apiAnalytics.fuelEfficiency.toFixed(2)
+          : derived.fuelEfficiency == null
+            ? '—'
+            : derived.fuelEfficiency.toFixed(2),
       label: 'km / L',
       description: lastCompletedTrip ? `Based on last completed trip (${lastCompletedTrip.id}).` : 'No completed trips yet.',
     },
@@ -84,6 +116,9 @@ export default function Analytics() {
   return (
     <div className="px-6 py-10 md:py-14 bg-main min-h-full">
       <div className="mx-auto max-w-7xl space-y-12">
+        {isLoading && trips.length === 0 ? <Loader label="Loading analytics…" /> : null}
+        {error ? <ErrorMessage message={error} /> : null}
+        {apiError && !error ? <ErrorMessage message={apiError} /> : null}
         
         {/* Premium Header */}
         <header className="mb-10">

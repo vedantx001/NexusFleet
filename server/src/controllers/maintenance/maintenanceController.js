@@ -50,6 +50,23 @@ async function createMaintenance(req, res, next) {
   }
 }
 
+async function listMaintenance(req, res, next) {
+  try {
+    const maintenanceLogs = await Maintenance.find({})
+      .sort({ serviceDate: -1, createdAt: -1 })
+      .populate('vehicle', 'name licensePlate vehicleType status')
+      .lean();
+
+    return sendSuccess(res, {
+      message: 'Maintenance logs fetched',
+      data: { maintenanceLogs },
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
 module.exports = {
   createMaintenance,
+  listMaintenance,
 };

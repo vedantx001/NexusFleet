@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, CheckCircle2, Plus, Truck, User, X } from 'lucide-react';
 import { useFleet } from './fleetStore';
 import ModalForm from '../../../components/forms/ModalForm';
+import Loader from '../../../components/common/Loader';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 import { VEHICLE_STATUSES } from '../../../features/vehicles/constants/vehicleConstants';
 import { isLicenseExpired } from '../../../context/FleetContext';
 
@@ -146,7 +148,7 @@ function TripRow({ trip, vehicle, driver, onRequestComplete }) {
 }
 
 export default function TripDispatcher() {
-  const { trips, dispatch, vehicles, drivers } = useFleet();
+  const { trips, dispatch, vehicles, drivers, isLoading, error: fleetError } = useFleet();
 
   const availableVehicles = useMemo(() => vehicles.filter((v) => v.status === VEHICLE_STATUSES.AVAILABLE.id), [vehicles]);
   const availableDrivers = useMemo(() => drivers.filter((d) => d.status === 'Available' && !isLicenseExpired(d.licenseExpiryDate)), [drivers]);
@@ -165,7 +167,7 @@ export default function TripDispatcher() {
   const [cargoWeight, setCargoWeight] = useState('');
   const [vehicleId, setVehicleId] = useState(availableVehicles[0]?.id || '');
   const [driverId, setDriverId] = useState(availableDrivers[0]?.id || '');
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     if (vehicleId && vehiclesById[vehicleId]?.status === VEHICLE_STATUSES.AVAILABLE.id) return;
@@ -201,37 +203,37 @@ export default function TripDispatcher() {
 
   const onCreateTrip = (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
 
     if (!vehicleId || !driverId) {
-      setError('Select an available vehicle and driver.');
+      setFormError('Select an available vehicle and driver.');
       return;
     }
 
     if (!isWeightValid) {
-      setError('Enter a valid cargo weight.');
+      setFormError('Enter a valid cargo weight.');
       return;
     }
 
     if (selectedVehicle && typeof selectedVehicle.maxCapacity === 'number' && parsedWeight > selectedVehicle.maxCapacity) {
       // Legacy field guard (old demo vehicles had maxCapacity).
-      setError(`Cargo weight exceeds max capacity (${selectedVehicle.maxCapacity}kg).`);
+      setFormError(`Cargo weight exceeds max capacity (${selectedVehicle.maxCapacity}kg).`);
       return;
     }
 
     if (selectedVehicle && typeof selectedVehicle.capacity === 'number' && parsedWeight > selectedVehicle.capacity) {
-      setError(`Cargo weight exceeds max capacity (${selectedVehicle.capacity}kg).`);
+      setFormError(`Cargo weight exceeds max capacity (${selectedVehicle.capacity}kg).`);
       return;
     }
 
     const selectedDriver = driverId ? driversById[driverId] : undefined;
     if (selectedDriver) {
       if (isLicenseExpired(selectedDriver.licenseExpiryDate)) {
-        setError('Driver license is expired.');
+        setFormError('Driver license is expired.');
         return;
       }
       if (selectedVehicle?.type && (!Array.isArray(selectedDriver.licenseCategories) || !selectedDriver.licenseCategories.includes(selectedVehicle.type))) {
-        setError(`Driver is not licensed for ${selectedVehicle.type} category.`);
+        setFormError(`Driver is not licensed for ${selectedVehicle.type} category.`);
         return;
       }
     }
@@ -260,6 +262,9 @@ export default function TripDispatcher() {
       transition={{ delay: 0.15 }}
       className="bg-(--bg-surface) border border-(--border) rounded-2xl p-6 shadow-(--shadow-md)"
     >
+      {isLoading && vehicles.length === 0 ? <Loader label="Loading dispatch data…" /> : null}
+      {fleetError ? <ErrorMessage message={fleetError} /> : null}
+
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-8">
         <div>
           <h2 className="text-xl font-semibold text-(--text-primary)">Trip Dispatcher</h2>
@@ -277,7 +282,7 @@ export default function TripDispatcher() {
           <button
             type="button"
             onClick={() => {
-              setError('');
+              setFormError('');
               setIsCreateOpen((v) => !v);
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-(--bg-main) border border-(--border) text-(--text-primary) font-medium text-sm hover:border-(--brand-accent) hover:text-(--brand-accent) transition-all"
@@ -393,7 +398,7 @@ export default function TripDispatcher() {
 
             <div className="mt-4 flex flex-col-reverse gap-3 md:flex-row md:items-center md:justify-between">
               <AnimatePresence>
-                {error ? (
+                {formError ? (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -401,7 +406,7 @@ export default function TripDispatcher() {
                     className="inline-flex items-center gap-2 text-sm text-(--danger)"
                   >
                     <AlertTriangle className="w-4 h-4" />
-                    <span>{error}</span>
+                    <span>{formError}</span>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
@@ -499,3 +504,4 @@ export default function TripDispatcher() {
     </motion.div>
   );
 }
+

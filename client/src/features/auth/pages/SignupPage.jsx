@@ -88,7 +88,7 @@ export default function SignupPage() {
 
     setIsLoading(true);
     try {
-      await signup({ name: formData.fullName, email: formData.email, password: formData.password });
+      await signup({ name: formData.fullName, email: formData.email, password: formData.password, role: formData.role });
       navigate('/dashboard', { replace: true });
     } catch (error) {
       setErrors((prev) => ({ ...prev, form: error?.friendlyMessage || 'Unable to create account' }));

@@ -7,7 +7,8 @@ import AppShell from './components/AppShell';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from '../features/auth/pages/LoginPage';
-import RegisterPage from '../features/auth/pages/RegisterPage';
+import SignupPage from '../features/auth/pages/SignupPage';
+import VehiclesPage from '../features/vehicles/pages/VehiclesPage';
 import useAuth from '../features/auth/hooks/useAuth';
 
 function ProtectedRoute({ children }) {
@@ -32,13 +33,14 @@ function ProtectedRoute({ children }) {
 
 export default function makeRouter() {
   return createBrowserRouter([
+    { path: '/login', element: <LoginPage /> },
+    { path: '/signup', element: <SignupPage /> },
+    { path: '/register', element: <Navigate to="/signup" replace /> },
     {
       path: '/',
       element: <AppShell />,
       children: [
         { index: true, element: <HomePage /> },
-        { path: 'login', element: <LoginPage /> },
-        { path: 'register', element: <RegisterPage /> },
         {
           path: 'dashboard',
           element: (
@@ -46,6 +48,10 @@ export default function makeRouter() {
               <DashboardPage />
             </ProtectedRoute>
           ),
+        },
+        {
+          path: 'vehicles',
+          element: <VehiclesPage />,
         },
       ],
     },

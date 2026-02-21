@@ -34,6 +34,9 @@ export default function AppShell() {
                 <NavLink to="/dashboard" className={navLinkClass}>
                   Dashboard
                 </NavLink>
+                <NavLink to="/vehicles" className={navLinkClass}>
+                  Vehicles
+                </NavLink>
                 <button className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-700 bg-transparent text-slate-100 hover:bg-slate-800" type="button" onClick={onLogout}>
                   Logout
                 </button>
@@ -43,8 +46,8 @@ export default function AppShell() {
                 <NavLink to="/login" className={navLinkClass}>
                   Login
                 </NavLink>
-                <NavLink to="/register" className={navLinkClass}>
-                  Register
+                <NavLink to="/signup" className={navLinkClass}>
+                  Signup
                 </NavLink>
               </>
             )}

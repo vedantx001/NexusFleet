@@ -1,89 +1,117 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import ErrorMessage from '../../../components/common/ErrorMessage';
-import Loader from '../../../components/common/Loader';
+import { ArrowRight, Mail, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
+import Checkbox from '../components/forms/Checkbox';
+import FormButton from '../components/forms/FormButton';
+import InputField from '../components/forms/InputField';
+import PasswordField from '../components/forms/PasswordField';
+import SelectDropdown from '../components/forms/SelectDropdown';
+import { ROLES } from '../constants/roles';
 import useAuth from '../hooks/useAuth';
-import AuthCard from '../components/AuthCard';
+import useThemeMode from '../hooks/useThemeMode';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
+  const { isDark, toggleTheme } = useThemeMode();
+  const [formData, setFormData] = useState({ email: '', password: '', role: '', rememberMe: false });
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const validate = () => {
+    const nextErrors = {};
+    if (!formData.email) nextErrors.email = 'Email address is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) nextErrors.email = 'Please enter a valid email';
+    if (!formData.password) nextErrors.password = 'Password is required';
+    if (!formData.role) nextErrors.role = 'Please select your role';
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!validate()) return;
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
-      await login({ email, password });
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError(err?.friendlyMessage || 'Login failed');
+      await login({ email: formData.email, password: formData.password });
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, form: error?.friendlyMessage || 'Unable to sign in' }));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-full px-4 py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center">
-        <AuthCard
-          title="Welcome back"
-          subtitle="Sign in to continue"
-          footer={
-            <span>
-              New here?{' '}
-              <Link className="font-semibold text-indigo-300 hover:text-indigo-200" to="/register">
-                Create an account
-              </Link>
-            </span>
-          }
-        >
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div>
-              <label className="text-sm font-medium text-slate-200" htmlFor="email">Email</label>
-              <input
-                id="email"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 mt-1"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+    <AuthLayout
+      title="NexusFleet Command Access"
+      subtitle="Sign in to your operational dashboard."
+      isDark={isDark}
+      toggleTheme={toggleTheme}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {errors.form ? <p className="text-sm text-[var(--danger)]">{errors.form}</p> : null}
+        <InputField
+          label="Work Email Address"
+          id="email"
+          type="email"
+          placeholder="officer@company.com"
+          icon={Mail}
+          value={formData.email}
+          onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+          error={errors.email}
+          required
+        />
 
-            <div>
-              <label className="text-sm font-medium text-slate-200" htmlFor="password">Password</label>
-              <input
-                id="password"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 mt-1"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+        <PasswordField
+          label="Password"
+          id="password"
+          placeholder="••••••••"
+          value={formData.password}
+          onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+          error={errors.password}
+          required
+        />
 
-            <ErrorMessage message={error} />
+        <SelectDropdown
+          label="System Role"
+          id="role"
+          icon={ShieldCheck}
+          placeholder="Select operational role"
+          options={ROLES}
+          value={formData.role}
+          onChange={(event) => setFormData({ ...formData, role: event.target.value })}
+          error={errors.role}
+          required
+        />
 
-            <button className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-indigo-500 text-white hover:bg-indigo-400 active:bg-indigo-500/90 w-full" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader label="Signing in" /> : 'Sign in'}
-            </button>
-          </form>
-        </AuthCard>
-      </div>
-    </div>
+        <div className="flex items-center justify-between pt-2">
+          <Checkbox
+            id="rememberMe"
+            label="Remember me for 30 days"
+            checked={formData.rememberMe}
+            onChange={(event) => setFormData({ ...formData, rememberMe: event.target.checked })}
+          />
+          <button type="button" className="text-sm font-medium text-[var(--info)] hover:text-[var(--brand-accent)] transition-colors">
+            Forgot Password?
+          </button>
+        </div>
+
+        <div className="pt-2">
+          <FormButton type="submit" isLoading={isLoading} className="py-3">
+            Access Dashboard <ArrowRight size={18} />
+          </FormButton>
+        </div>
+
+        <p className="text-center text-sm text-[var(--text-secondary)] mt-6 transition-colors">
+          New to the fleet?{' '}
+          <Link to="/signup" className="font-semibold text-[var(--info)] hover:text-[var(--brand-accent)] transition-colors">
+            Request Account Registration
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

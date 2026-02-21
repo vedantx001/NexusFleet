@@ -1,68 +1,80 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import api from '../services/api';
+import {
+  getCurrentUser,
+  login as loginRequest,
+  logout as logoutRequest,
+  signup as signupRequest,
+} from '../features/auth/services/authService';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
-
-  const refreshMe = useCallback(async () => {
-    try {
-      const res = await api.get('/auth/me');
-      // Unified server response: { success, message, data }
-      setUser(res?.data?.data?.user || null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
-    (async () => {
+
+    const bootstrap = async () => {
       try {
-        await refreshMe();
+        const currentUser = await getCurrentUser();
+        if (isMounted && currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } finally {
-        if (isMounted) setIsBootstrapping(false);
+        if (isMounted) {
+          setIsBootstrapping(false);
+        }
       }
-    })();
+    };
+
+    bootstrap();
 
     return () => {
       isMounted = false;
     };
-  }, [refreshMe]);
-
-  const login = useCallback(async ({ email, password }) => {
-    const res = await api.post('/auth/login', { email, password });
-    setUser(res?.data?.data?.user || null);
-    return res;
   }, []);
 
-  const register = useCallback(async ({ name, email, password }) => {
-    const res = await api.post('/auth/register', { name, email, password });
-    setUser(res?.data?.data?.user || null);
-    return res;
+  const login = useCallback(async ({ email, password }) => {
+    const nextUser = await loginRequest({ email, password });
+    setUser(nextUser);
+    setIsAuthenticated(true);
+    return nextUser;
+  }, []);
+
+  const signup = useCallback(async ({ name, email, password }) => {
+    const nextUser = await signupRequest({ name, email, password });
+    setUser(nextUser);
+    setIsAuthenticated(true);
+    return nextUser;
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await api.post('/auth/logout');
+      await logoutRequest();
     } finally {
       setUser(null);
+      setIsAuthenticated(false);
     }
   }, []);
 
   const value = useMemo(
     () => ({
-      user,
-      isAuthenticated: Boolean(user),
       isBootstrapping,
+      isAuthenticated,
+      user,
       login,
-      register,
+      signup,
       logout,
-      refreshMe,
     }),
-    [user, isBootstrapping, login, register, logout, refreshMe],
+    [isBootstrapping, isAuthenticated, user, login, signup, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -63,7 +63,7 @@ export default function Navbar({ toggleTheme, isDark, loginHref = '/dashboard' }
             <Command className="w-5 h-5 text-black" />
           </div>
           <span className="font-bold text-xl text-(--text-primary) tracking-tight">
-            Fleet<span className="text-(--brand-accent)">Flow</span>
+            Nexus<span className="text-(--brand-accent)">Fleet</span>
           </span>
         </div>
 
